@@ -214,3 +214,9 @@ def add_stacked_area_chart(slug):
     graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
     local('cp -r graphic_templates/stacked_area_chart %s' % graphic_path)
     download_copy(slug)
+
+@task
+def add_grouped_bar_chart_horizontal(slug):
+    graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
+    local('cp -r graphic_templates/grouped_bar_chart_horizontal %s' % graphic_path)
+    download_copy(slug)
