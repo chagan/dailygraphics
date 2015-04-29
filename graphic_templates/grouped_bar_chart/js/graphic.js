@@ -12,23 +12,14 @@ var LABEL_WIDTH = 85;
 var MOBILE_THRESHOLD = 500;
 var VALUE_MIN_WIDTH = 25;
 
-var colors = {
-    'red1': '#6C2315', 'red2': '#A23520', 'red3': '#D8472B', 'red4': '#E27560', 'red5': '#ECA395', 'red6': '#F5D1CA',
-    'orange1': '#714616', 'orange2': '#AA6A21', 'orange3': '#E38D2C', 'orange4': '#EAAA61', 'orange5': '#F1C696', 'orange6': '#F8E2CA',
-    'yellow1': '#77631B', 'yellow2': '#B39429', 'yellow3': '#EFC637', 'yellow4': '#F3D469', 'yellow5': '#F7E39B', 'yellow6': '#FBF1CD',
-    'teal1': '#0B403F', 'teal2': '#11605E', 'teal3': '#17807E', 'teal4': '#51A09E', 'teal5': '#8BC0BF', 'teal6': '#C5DFDF',
-    'blue1': '#28556F', 'blue2': '#3D7FA6', 'blue3': '#51AADE', 'blue4': '#7DBFE6', 'blue5': '#A8D5EF', 'blue6': '#D3EAF7'
-};
-
-var color;
-var graphicData;
-var isMobile = false;
-
 // D3 formatters
 var fmtComma = d3.format(',');
 var fmtYearAbbrev = d3.time.format('%y');
 var fmtYearFull = d3.time.format('%Y');
 
+var color;
+var graphicData;
+var isMobile = false;
 
 /*
  * Initialize
@@ -41,7 +32,7 @@ var onWindowLoaded = function() {
             graphicData = data;
 
             color = d3.scale.ordinal()
-                .range([colors['teal3'], colors['teal5']])
+                .range([COLORS['teal3'], COLORS['teal5']])
                 .domain(d3.keys(graphicData[0]).filter(function(key) { return key !== 'Group'; }));
 
             graphicData.forEach(function(d) {
@@ -181,10 +172,10 @@ var drawGraph = function(graphicWidth) {
         );
 
     // draw the bars
-    var barGroup = svg.selectAll('.bar-group')
+    var barGroup = svg.selectAll('.bars')
         .data(graphicData)
         .enter().append('g')
-            .attr('class', 'g')
+            .attr('class', 'g bars')
             .attr('transform', function(d,i) {
                 if (i == 0) {
                     return 'translate(0,0)';
@@ -234,26 +225,26 @@ var drawGraph = function(graphicWidth) {
                 }
             })
             .attr('dx', function(d) {
-                if (x(d['amt']) < VALUE_MIN_WIDTH) {
-                    return 6;
-                } else {
+                if (x(d['amt']) > VALUE_MIN_WIDTH) {
                     return -6;
+                } else {
+                    return 6;
                 }
             })
             .attr('dy', (BAR_HEIGHT / 2) + 4)
             .attr('text-anchor', function(d) {
-                if (x(d['amt']) < VALUE_MIN_WIDTH) {
-                    return 'begin';
-                } else {
+                if (x(d['amt']) > VALUE_MIN_WIDTH) {
                     return 'end';
+                } else {
+                    return 'begin';
                 }
             })
             .attr('class', function(d) {
                 var c = classify(d['label']);
-                if (x(d['amt']) < VALUE_MIN_WIDTH) {
-                    c += ' outer';
+                if (x(d['amt']) > VALUE_MIN_WIDTH) {
+                    c += ' in';
                 } else {
-                    c += ' inner';
+                    c += ' out';
                 }
                 return c;
             })
@@ -293,15 +284,6 @@ var drawGraph = function(graphicWidth) {
                     return d['key']
                 });
 }
-
-
-/*
- * HELPER FUNCTIONS
- */
-var classify = function(str) { // clean up strings to use as CSS classes
-    return str.replace(/\s+/g, '-').toLowerCase();
-}
-
 
 /*
  * Initially load the graphic
