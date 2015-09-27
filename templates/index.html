@@ -36,7 +36,8 @@
             opacity: 0.7;
         }
 
-        .graphics-list li {
+        .graphics-list li,
+        .templates-list li {
             margin-top: 0;
             margin-bottom: 6px;
         }
@@ -70,6 +71,12 @@
 
 <ol class="graphics-list">{% for graphic in graphics %}
     <li><a href="/graphics/{{ graphic }}/?refresh=1">{{ graphic }}</a></li>
+{% endfor %}</ol>
+
+<h1>There are <strong>{{ templates_count }}</strong> templates:</h1>
+
+<ol class="templates-list">{% for template in templates %}
+    <li><a href="/templates/{{ template }}/?refresh=1">{{ template }}</a></li>
 {% endfor %}</ol>
 
 </body>

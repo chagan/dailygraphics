@@ -5,6 +5,7 @@ import imp
 import json
 import os
 import subprocess
+import sys
 import webbrowser
 
 from distutils.spawn import find_executable
@@ -20,6 +21,8 @@ import flat
 import render
 import utils
 
+from render_utils import load_graphic_config
+
 SPREADSHEET_COPY_URL_TEMPLATE = 'https://www.googleapis.com/drive/v2/files/%s/copy'
 SPREADSHEET_VIEW_TEMPLATE = 'https://docs.google.com/spreadsheet/ccc?key=%s#gid=1'
 
@@ -27,21 +30,6 @@ SPREADSHEET_VIEW_TEMPLATE = 'https://docs.google.com/spreadsheet/ccc?key=%s#gid=
 Base configuration
 """
 env.settings = None
-
-def _graphic_config(slug):
-    """
-    Load and the graphic config for a graphic.
-    """
-    graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
-
-    try:
-        graphic_config = imp.load_source('graphic_config', '%s/graphic_config.py' % graphic_path)
-    except IOError:
-        print '%s/graphic_config.py does not exist.' % slug
-
-        raise
-
-    return graphic_config
 
 """
 Environments
@@ -94,19 +82,23 @@ def deploy(slug):
         print 'You must specify a project slug, like this: "deploy:slug"'
         return
 
-    update_copy(slug)
-    #assets.sync(slug)
-    render.render(slug)
-
     graphic_root = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
     s3_root = '%s/graphics/%s' % (app_config.PROJECT_SLUG, slug)
     graphic_assets = '%s/assets' % graphic_root
     s3_assets = '%s/assets' % s3_root
 
-    graphic_config = _graphic_config(slug)
+    graphic_config = load_graphic_config(graphic_root)
 
+    use_assets = getattr(graphic_config, 'USE_ASSETS', True)
     default_max_age = getattr(graphic_config, 'DEFAULT_MAX_AGE', None) or app_config.DEFAULT_MAX_AGE
     assets_max_age = getattr(graphic_config, 'ASSETS_MAX_AGE', None) or app_config.ASSETS_MAX_AGE
+
+    update_copy(slug)
+
+    if use_assets:
+        assets.sync(slug)
+
+    render.render(slug)
 
     flat.deploy_folder(
         graphic_root,
@@ -126,13 +118,14 @@ def deploy(slug):
         }
     )
 
-    flat.deploy_folder(
-        graphic_assets,
-        s3_assets,
-        headers={
-            'Cache-Control': 'max-age=%i' % assets_max_age
-        }
-    )
+    if use_assets:
+        flat.deploy_folder(
+            graphic_assets,
+            s3_assets,
+            headers={
+                'Cache-Control': 'max-age=%i' % assets_max_age
+            }
+        )
 
     print ''
     print '%s URL: %s/graphics/%s/' % (env.settings.capitalize(), app_config.S3_BASE_URL, slug)
@@ -144,7 +137,7 @@ def download_copy(slug):
     graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
 
     try:
-        graphic_config = _graphic_config(slug)
+        graphic_config = load_graphic_config(graphic_path)
     except IOError:
         print '%s/graphic_config.py does not exist.' % slug
         return
@@ -196,8 +189,15 @@ def _add_graphic(slug, template):
 
     if os.path.isfile(config_path):
         print 'Creating spreadsheet...'
-        copy_spreadsheet(slug)
-        download_copy(slug)
+
+        success = copy_spreadsheet(slug)
+
+        if success:
+            download_copy(slug)
+        else:
+            local('rm -r graphic_path')
+            print 'Failed to copy spreadsheet! Try again!'
+            return
     else:
         print 'No graphic_config.py found, not creating spreadsheet'
 
@@ -213,9 +213,9 @@ def _check_slug(slug):
         return True
 
     try:
-        s3 = boto.connect_s3()
-        bucket = s3.get_bucket(app_config.PRODUCTION_S3_BUCKET['bucket_name'])
+        bucket = utils.get_bucket(app_config.PRODUCTION_S3_BUCKET['bucket_name'])
         key = bucket.get_key('%s/graphics/%s/child.html' % (app_config.PROJECT_SLUG, slug))
+
         if key:
             print 'Error: Slug exists on apps.npr.org'
             return True
@@ -255,6 +255,13 @@ def add_stacked_column_chart(slug):
     _add_graphic(slug, 'stacked_column_chart')
 
 @task
+def add_block_histogram(slug):
+    """
+    Create a block histogram.
+    """
+    _add_graphic(slug, 'block_histogram')
+
+@task
 def add_grouped_bar_chart(slug):
     """
     Create a grouped bar chart.
@@ -269,11 +276,39 @@ def add_stacked_bar_chart(slug):
     _add_graphic(slug, 'stacked_bar_chart')
 
 @task
+def add_state_grid_map(slug):
+    """
+    Create a state grid cartogram
+    """
+    _add_graphic(slug, 'state_grid_map')
+
+@task
 def add_line_chart(slug):
     """
     Create a line chart.
     """
     _add_graphic(slug, 'line_chart')
+
+@task
+def add_dot_chart(slug):
+    """
+    Create a dot chart with error bars
+    """
+    _add_graphic(slug, 'dot_chart')
+
+@task
+def add_slopegraph(slug):
+    """
+    Create a slopegraph (intended for narrow display)
+    """
+    _add_graphic(slug, 'slopegraph')
+
+@task
+def add_map(slug):
+    """
+    Create a locator map.
+    """
+    _add_graphic(slug, 'locator_map')
 
 @task
 def add_table(slug):
@@ -325,8 +360,8 @@ def copy_spreadsheet(slug):
     """
     _check_credentials()
 
-    config_path = '%s/%s/graphic_config.py' % (app_config.GRAPHICS_PATH, slug)
-    graphic_config = _graphic_config(slug)
+    config_path = '%s/%s/' % (app_config.GRAPHICS_PATH, slug)
+    graphic_config = load_graphic_config(config_path)
 
     if not hasattr(graphic_config, 'COPY_GOOGLE_DOC_KEY') or not graphic_config.COPY_GOOGLE_DOC_KEY:
         print 'Skipping spreadsheet creation. (COPY_GOOGLE_DOC_KEY is not defined in %s/graphic_config.py.)' % slug
@@ -343,12 +378,18 @@ def copy_spreadsheet(slug):
     }
 
     resp = app_config.authomatic.access(**kwargs)
+
     if resp.status == 200:
         spreadsheet_key = resp.data['id']
         spreadsheet_url = SPREADSHEET_VIEW_TEMPLATE % spreadsheet_key
         print 'New spreadsheet created successfully!'
         print 'View it online at %s' % spreadsheet_url
-        utils.replace_in_file(config_path, graphic_config.COPY_GOOGLE_DOC_KEY, spreadsheet_key)
-    else:
-        print 'Error creating spreadsheet (status code %s) with message %s' % (resp.status, resp.reason)
-        return None
+
+        utils.replace_in_file('%s/graphic_config.py' % config_path , graphic_config.COPY_GOOGLE_DOC_KEY, spreadsheet_key)
+
+        return True
+
+        utils.replace_in_file(config_path, graphic_config.COPY_GOOGLE_DOC_KEY, '')
+
+    print 'Error creating spreadsheet (status code %s) with message %s' % (resp.status, resp.reason)
+    return False

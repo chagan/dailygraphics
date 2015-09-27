@@ -5,13 +5,18 @@ dailygraphics
 * [Assumptions](#assumptions)
 * [What's in here?](#whats-in-here)
 * [Bootstrap the project](#bootstrap-the-project)
+* [Using a stable version](#using-a-stable-version)
 * [Configuration](#configuration)
 * [Run the project](#run-the-project)
 * [Add a new graphic](#add-a-new-graphic)
 * [Deploy to S3](#deploy-to-s3)
 * [Embedding](#embedding)
 * [Connecting to a Google Spreadsheet](#connecting-to-a-google-spreadsheet)
+* [Using Jinja filter functions](#using-jinja-filter-functions)
 * [Storing media assets](#storing-media-assets)
+* [Creating locator maps](#creating-locator-maps)
+* [Adding a new graphic template](#adding-a-new-graphic-template)
+* [Keeping the graphics directory clean](#keeping-the-graphics-directory-clean)
 
 What is this?
 -------------
@@ -34,6 +39,8 @@ In addition to big, long-term projects, the NPR Visuals team also produces short
 * [Making Data Tables Responsive](http://blog.apps.npr.org/2014/05/09/responsive-data-tables.html)
 * [Managing Instagram Photo Call-Outs](http://blog.apps.npr.org/2014/05/29/photo-callouts.html)
 * [Baking Chart Data Into Your Page](http://blog.apps.npr.org/2015/01/28/dailygraphics-json.html)
+* [Let’s Tesselate: Hexagons For Tile Grid Maps](http://blog.apps.npr.org/2015/05/11/hex-tile-maps.html)
+* [Simplifying Map Production](http://blog.apps.npr.org/2015/05/18/locator-maps.html)
 
 #### Things We've Built Using Dailygraphics
 * [Responsive charts](http://www.npr.org/blogs/codeswitch/2014/05/14/298726161/new-orleans-police-hope-to-win-the-city-back-one-kid-at-a-time)
@@ -64,29 +71,32 @@ What's in here?
 
 The project contains the following folders and important files:
 
-* ``data`` -- Place for downloaded COPY spreadsheets and other incidental data.
 * ``etc`` -- Miscellanous Python libraries.
 * ``fabfile`` -- [Fabric](http://docs.fabfile.org/en/latest/) commands for automating setup and deployment.
-* ``new_graphic`` -- This directory is copied for each new graphic.
+* ``graphic_templates`` -- Folder templates for different graphic types.
 * ``templates`` -- HTML ([Jinja2](http://jinja.pocoo.org/docs/)) templates, to be compiled locally.
-* ``www`` -- Static assets to be deployed.
 * ``app.py`` -- A [Flask](http://flask.pocoo.org/) app for rendering the project locally.
 * ``app_config.py`` -- Global project configuration for scripts, deployment, etc.
+* ``graphic.py`` -- Flask views for rendering graphics.
+* ``graphic_templates.py`` -- Flask views for rendering graphics templates.
+* ``oauth.py`` -- Flask views for configuring OAuth (for Google Spreadsheets).
+* ``package.json`` -- Node requirements.
 * ``render_utils.py`` -- Code supporting template rendering.
 * ``requirements.txt`` -- Python requirements.
-* ``static.py`` -- Flask views for serving static files.
 
 Bootstrap the project
 ---------------------
 
-Node.js is required for the static asset pipeline. If you don't already have it, get it like this:
+Node.js is required for the static asset pipeline. If you don't already have it, get it like this (requires [brew](http://brew.sh/)):
 
 ```
 brew install node
-curl https://npmjs.org/install.sh | sh
 ```
 
+Then setup the project like this:
+
 ```
+git clone https://github.com/nprapps/dailygraphics.git
 cd dailygraphics
 mkvirtualenv --no-site-packages dailygraphics
 pip install -r requirements.txt
@@ -98,6 +108,35 @@ You'll now need to create a folder to hold the graphics created and deployed by 
 **NPR users:** Graphics are stored in a separate, private repository, and `app_config.GRAPHICS_PATH` points to that folder. You will need to separately `git clone` that repository.
 
 **All other users:** You can choose to keep your work in a separate version-controlled repository, as we do, or you can change the `app_config.GRAPHICS_PATH` to point to a folder inside of `dailygraphics`.
+
+Using a stable version
+----------------------
+
+The master branch of project is in active development by NPR at all times. If you would like to use a [more] stable version, we suggest checking out a tagged version (``0.1``, etc.). We will periodically tag releases, which will be synchronized to the ``CHANGELOG`` so you will know exactly what improvements you will get if you migrate to a new tagged version.
+
+To see available tagged versions, run:
+
+```
+git tag -l
+```
+
+To use a tagged version run, for example:
+
+```
+git checkout 0.1.0
+```
+
+To upgrade to a newer tagged version just check it out:
+
+```
+git checkout 0.2.0
+```
+
+When upgrading from one tagged version to another, please be sure to update your Python requirements:
+
+```
+pip install -Ur requirements.txt
+```
 
 Configuration
 -------------
@@ -158,7 +197,9 @@ It's possible that the webserver is already running silently in the background. 
 Add a new graphic
 -----------------
 
-dailygraphics includes starter code for a few different types of graphics (and we're slowly adding more as we go):
+dailygraphics includes starter code for a few different types of graphics (and we're slowly adding more as we go). Running any of these commands will create the folder ```$SLUG``` within your ```app_config.GRAPHICS_PATH``` folder. Within the new folder will be a ```child_template.html``` file and some boilerplate javascript files. ```child_template.html``` is a Jinja template that will be rendered with a context containing the contents of ```app_config.py```, ```graphic_config.py``` and the ```COPY``` document for that graphic. It also will clone a new Google Spreadsheet for you to use for text and data.
+
+Build out your graphic in ```child_template.html```, and put your javascript in ```js/graphic.js```.
 
 | Image | Type | Fab command |
 | :---- | :--- | :---------- |
@@ -168,12 +209,13 @@ dailygraphics includes starter code for a few different types of graphics (and w
 | ![Stacked bar chart](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/stacked-bar-chart.png) | Stacked bar chart | ```fab add_stacked_bar_chart:$SLUG``` |
 | ![Column chart](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/column-chart.png) | Column chart | ```fab add_column_chart:$SLUG``` |
 | ![Stacked column chart](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/stacked-column-chart.png) | Stacked column chart | ```fab add_stacked_column_chart:$SLUG``` |
+| ![Block histogram](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/block-histogram.png) | Block histogram | ```fab add_block_histogram:$SLUG``` |
 | ![Line chart](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/line-chart.png) | Line chart | ```fab add_line_chart:$SLUG``` |
+| ![Slopegraph](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/slopegraph.png) | Slopegraph | ```fab add_slopegraph:$SLUG``` |
+| ![Dot chart](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/dot-chart.png) | Dot chart | ```fab add_dot_chart:$SLUG``` |
+| ![Locator map](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/locator-map.png) | [Locator map](#creating-locator-maps) | ```fab add_map:$SLUG``` |
+| ![State grid map](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/state-grid-map.png) | State grid map | ```fab add_state_grid_map:$SLUG``` |
 | ![Table](https://raw.githubusercontent.com/nprapps/dailygraphics/master/graphic_templates/_thumbs/table.png) | Responsive HTML table | ```fab add_table:$SLUG``` |
-
-Running any of these commands will create the folder ```$SLUG``` within your ```app_config.GRAPHICS_PATH``` folder. Within the new folder will be a ```child_template.html``` file and some boilerplate javascript files. ```child_template.html``` is a Jinja template that will be rendered with a context containing the contents of ```app_config.py```, ```graphic_config.py``` and the ```COPY``` document for that graphic. It also will clone a new Google Spreadsheet for you to use for text and data.
-
-Build out your graphic in ```child_template.html```, and put your javascript in ```js/graphic.js```.
 
 **Note**: `$SLUG` should be URL-safe, e.g., lowercase and with dashes instead of spaces and no special characters.
 
@@ -241,6 +283,29 @@ Note: Your published graphic **will not** automatically update every time your s
 If you do **not** want want to use the copytext spreadsheet for a given project, you can either set ``COPY_GOOGLE_DOC_KEY`` to ``None`` or delete the ``graphic_config.py`` file entirely.
 
 
+Using Jinja filter functions
+----------------------------
+
+A [library of Jinja filter functions](https://github.com/nprapps/dailygraphics/blob/master/graphic_templates/_base/base_filters.py) for common tasks (ordinal, AP date format, etc.) is included with each graphic.
+
+If you're graphic requires complex number formatting or other nuanced presentation, you may need to write a custom filter function. This is supported through each project's ``graphic_config.py`` file. To add a custom filter function, simply define it and add it to the list called ``JINJA_FILTER_FUNCTIONS``, like so:
+
+```python
+def percent(value):
+    return unicode(float(value * 100)) + '%'
+
+    JINJA_FILTER_FUNCTIONS = base_filters.FILTERS + [percent]
+```
+
+Then you will be able to use it in your template like this:
+
+```html
+<td>{{ row.value|percent }}</td>
+```
+
+See the ``table`` graphic template for a more complete example.
+
+
 Storing media assets
 --------------------
 
@@ -260,3 +325,79 @@ Syncing these assets requires running a couple different commands at the right t
 * You can also take all remote versions (type "ra") or all local versions (type "la"). Type "c" to cancel if you aren't sure what to do.
 
 Unfortunately, there is no automatic way to know when a file has been intentionally deleted from the server or your local directory. When you want to simultaneously remove a file from the server and your local environment (i.e. it is not needed in the project any longer), run ```fab assets.rm:"$SLUG/assets/file_name_here.jpg"```
+
+Creating Locator Maps
+---------------------
+
+The new locator map template is designed to simplify creating basic locator maps with D3, TopoJSON and [Natural Earth](http://www.naturalearthdata.com) data. It will not create production-ready maps, but it will quickly generate a code-based starting point for a map project.
+
+To generate the necessary TopoJSON file, you will need to install the [mapturner](https://github.com/nprapps/mapturner) library. Mapturner also requires ogr2ogr/GDAL and topojson. **[See the mapturner docs](https://github.com/nprapps/mapturner)** for set-up information.
+
+_(Note: The code in our example is tailored for a map centered on Nepal. You'll want to edit the configuration, JavaScript and LESS accordingly.)_
+
+To get started, create a new graphic using that template:
+
+```
+fab add_map:$slug
+```
+
+Inside the project folder, edit the configuration file ```geodata.yaml``` to specify the particular layers and data columns you want. Options included:
+
+* ```bbox```: The bounding box for your map. To get coordinates (```x1 y1 x2 y2```, space-delimited) appropriate to your project, go to a site like [Bounding Box](http://boundingbox.klokantech.com), draw a box around the area you want (with a good amount of margin), and copy the coordinates of that box. (If you're using Bounding Box, choose the "CSV" coordinate output and replace the commas with spaces.)
+* Default layers: ```countries```, ```cities``` (for the primary/featured country), ```neighbors``` (for neighboring countries), ```lakes``` and ```rivers```. The default layers point to Natural Earth shapefiles. mapturner also supports geoJSON and CSVs with latitude and longitude columns.
+* For each shapefile layer, you can specify options to pass to the TopoJSON converter, including:
+  * ```id-property```: a column value you want to use as an identifier in the exported TopoJSON file
+  * ```properties```: columns you want TopoJSON to preserve in the exported file (by default, it strips out most non-geo data)
+  * ```where```: a query to pass in to filter the data returned (for example: ```where: adm0name != 'Nepal' AND scalerank <= 2```)
+
+([See the mapturner docs](https://github.com/nprapps/mapturner) for more details.)
+
+In your terminal, in the ```dailygraphics``` virtualenv, navigate to your project folder. Run mapturner to process your map's geodata:
+
+```
+mapturner geodata.yaml data/geodata.json
+```
+
+In your project ```js/graphic.js``` folder, change the ```PRIMARY_COUNTRY``` variable at the top from Nepal to the name of your featured country. You will also want to adjust the ```MAP_DEFAULT_SCALE``` and ```MAP_DEFAULT_HEIGHT``` variables so that your featured country fits onscreen.
+
+Adding a new graphic template
+-----------------------------
+
+To create and use a new graphic template, you will need to follow several steps. First, choose a suitable existing template and copy it's folder, for instance:
+
+```
+cd graphic_templates
+cp -r line_chart scatterplot
+```
+
+Second, open the COPY Google Spreadsheet for the pre-existing graphic template ("line_chart" in the example above). Make a copy of this document and adjust the headline in the copy to match the new chart type. Be sure to make this new spreadsheet public. (Share > Get Shareable Link > Can View). Copy the key for the new spreadsheet from the URL and paste it into the `graphic_config.py` for your new template.
+
+Third, modify the new template to render your new chart type. Be sure to remove any dependencies you don't need for this graphic type. You can test your graphic template using the local server, for instance: [http://localhost:8000/templates/scatterplot/?refresh=1](http://localhost:8000/templates/scatterplot/?refresh=1)
+
+Before you can use your new template you'll also need to add a fab command. In ``fabfile/__init__.py`` scroll down to the tasks for creating graphics and add a task for your new template, like this:
+
+```
+@task
+def add_scatterplot(slug):
+    """
+    Create a scatterplot.
+    """
+    _add_graphic(slug, 'scatterplot')
+```
+
+Lastly, commit your new graphic template and your fabfile changes. Your new graphic template is now ready to use.
+
+Keeping the graphics directory clean
+------------------------------------
+
+If you are working with multiple users who are creating/deleting graphics, you may find that you end up with folders for deleted graphics containing only their copytext and other, uncommitted files. If this is bothering you, run:
+
+```
+git clean -dn
+```
+
+This will list folders with no committed files. To permanantly delete those folders, run:
+
+```
+git clean -df
+```

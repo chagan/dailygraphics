@@ -1,15 +1,4 @@
-/* graphic */
-#graphic {
-    position: relative;
-    margin-bottom: 22px;
-}
-#graphic:before,
-#graphic:after {
-    content: ' ';
-    display: table;
-}
-#graphic:after { clear: both; }
-
+@import "base";
 
 /* table */
 table {
@@ -52,7 +41,7 @@ table tr.shadedrow {
 }
 
 /* responsive table */
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 500px) {
     table,
     tbody {
         display: block;

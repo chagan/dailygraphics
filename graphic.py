@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import imp
+from mimetypes import guess_type
 import os
 import subprocess
 
@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 import app_config
 import copytext
 import oauth
-from render_utils import make_context, render_with_context
+from render_utils import load_graphic_config, make_context, render_with_context
 
 graphic = Blueprint('graphic', __name__)
 
@@ -20,6 +20,8 @@ def _graphics_detail(slug):
     """
     Renders a parent.html index with child.html embedded as iframe.
     """
+    from flask import request
+
     graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
 
     # NOTE: Parent must load pym.js from same source as child to prevent version conflicts!
@@ -32,11 +34,16 @@ def _graphics_detail(slug):
         template = 'parent_old.html'
 
     try:
-        graphic_config = imp.load_source('graphic_config', '%s/graphic_config.py' % graphic_path)
+        graphic_config = load_graphic_config(graphic_path)
         context.update(graphic_config.__dict__)
 
         if hasattr(graphic_config, 'COPY_GOOGLE_DOC_KEY') and graphic_config.COPY_GOOGLE_DOC_KEY:
-            context['COPY'] = copytext.Copy(filename='%s/%s.xlsx' % (graphic_path, slug))
+            copy_path = '%s/%s.xlsx' % (graphic_path, slug)
+
+            if request.args.get('refresh'):
+                oauth.get_document(graphic_config.COPY_GOOGLE_DOC_KEY, copy_path)
+
+            context['COPY'] = copytext.Copy(filename=copy_path)
     except IOError:
         pass
 
@@ -49,6 +56,7 @@ def _graphics_child(slug):
     Renders a child.html for embedding.
     """
     graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
+    print graphic_path
 
     # Fallback for legacy projects w/o child templates
     if not os.path.exists('%s/child_template.html' % graphic_path):
@@ -60,16 +68,23 @@ def _graphics_child(slug):
     context = make_context(asset_depth=2, root_path=graphic_path)
     context['slug'] = slug
 
+    env = Environment(loader=FileSystemLoader(graphic_path))
+
     try:
-        graphic_config = imp.load_source('graphic_config', '%s/graphic_config.py' % graphic_path)
+        graphic_config = load_graphic_config(graphic_path)
         context.update(graphic_config.__dict__)
 
+        if hasattr(graphic_config, 'JINJA_FILTER_FUNCTIONS'):
+            for func in graphic_config.JINJA_FILTER_FUNCTIONS:
+                env.filters[func.__name__] = func
+
         if hasattr(graphic_config, 'COPY_GOOGLE_DOC_KEY') and graphic_config.COPY_GOOGLE_DOC_KEY:
-            context['COPY'] = copytext.Copy(filename='%s/%s.xlsx' % (graphic_path, slug))
+            copy_path = '%s/%s.xlsx' % (graphic_path, slug)
+
+            context['COPY'] = copytext.Copy(filename=copy_path)
     except IOError:
         pass
 
-    env = Environment(loader=FileSystemLoader(graphic_path))
     env.globals.update(render=render_with_context)
     template = env.get_template('child_template.html')
 
@@ -90,3 +105,14 @@ def _graphic_less(slug, filename):
     r = subprocess.check_output(['node_modules/less/bin/lessc', less_path])
 
     return make_response(r, 200, { 'Content-Type': 'text/css' })
+
+# Serve arbitrary static files on-demand
+@graphic.route('/<slug>/<path:path>')
+def _static(slug, path):
+    real_path = '%s/%s/%s' % (app_config.GRAPHICS_PATH, slug, path)
+
+    try:
+        with open(real_path) as f:
+            return f.read(), 200, { 'Content-Type': guess_type(real_path)[0] }
+    except IOError:
+        abort(404)

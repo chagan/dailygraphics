@@ -11,18 +11,26 @@
     <meta name="robots" content="noindex" />
     <link rel="shortcut icon" href="http://media.npr.org/favicon.ico" />
 
+    <base target="_blank">
+
     {% block fonts %}
 
     <!-- Fonts -->
     <script src="http://apps.npr.org/dailygraphics/graphics/fonts/js/lib/webfont.js"></script>
     <script>
-        WebFont.load({
-             custom: {
-                 families: [ 'Gotham SSm:n4,n7' ],
-                 urls: [ 'http://s.npr.org/templates/css/fonts/GothamSSm.css' ]
-             },
-             timeout: 10000
-         });
+    WebFont.load({
+        custom: {
+            families: [
+                'Gotham SSm:n4,n7',
+                'Knockout 31 4r:n4'
+            ],
+            urls: [
+                'http://s.npr.org/templates/css/fonts/GothamSSm.css',
+                'http://s.npr.org/templates/css/fonts/Knockout.css'
+            ]
+        },
+        timeout: 10000
+    });
     </script>
 
     {% endblock %}
@@ -34,12 +42,12 @@
     </script>
 
     <!-- CSS + LESS -->
-    {{ CSS.push('css/base.less') }}
     {{ CSS.push('css/graphic.less') }}
     {{ CSS.render('css/graphic-header.css') }}
 </head>
 <body>
     <!-- Analytics -->
+    {{ JS.push('js/base.js') }}
     {{ JS.push('js/analytics.js') }}
     {{ JS.render('js/graphic-header.js') }}
 
@@ -51,11 +59,10 @@
 
     {% block js %}
 
-        {{ JS.push('js/lib/jquery.js') }}
+        {{ JS.push('js/lib/underscore.js') }}
         {{ JS.push('js/lib/d3.min.js') }}
         {{ JS.push('js/lib/modernizr.svg.min.js') }}
         {{ JS.push('js/lib/pym.js') }}
-        {{ JS.push('js/base.js') }}
         {{ JS.push('js/graphic.js') }}
         {{ JS.render('js/graphic-footer.js') }}
 
