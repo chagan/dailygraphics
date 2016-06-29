@@ -146,8 +146,12 @@ def download_copy(slug):
         print 'COPY_GOOGLE_DOC_KEY is not defined in %s/graphic_config.py.' % slug
         return
 
-    copy_path = os.path.join(graphic_path, '%s.xlsx' % slug)
-    get_document(graphic_config.COPY_GOOGLE_DOC_KEY, copy_path)
+    formats = ['xlsx','csv']
+
+    for format in formats:
+
+        copy_path = os.path.join(graphic_path, '%s.%s' % (slug,format))
+        get_document(graphic_config.COPY_GOOGLE_DOC_KEY, format, copy_path)
 
 @task
 def update_copy(slug=None):
@@ -328,6 +332,13 @@ def add_grouped_bar_chart_horizontal(slug):
     graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
     local('cp -r graphic_templates/grouped_bar_chart_horizontal %s' % graphic_path)
     download_copy(slug)
+
+@task
+def add_map_d3(slug):
+    """
+    Create a D3 map.
+    """
+    _add_graphic(slug, 'map_d3')
 
 def _check_credentials():
     """

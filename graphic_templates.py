@@ -39,7 +39,7 @@ def _templates_detail(slug):
             copy_path = '%s/%s.xlsx' % (template_path, slug)
 
             if request.args.get('refresh'):
-                oauth.get_document(graphic_config.COPY_GOOGLE_DOC_KEY, copy_path)
+                oauth.get_document(graphic_config.COPY_GOOGLE_DOC_KEY, 'xlsx', copy_path)
 
             context['COPY'] = copytext.Copy(filename=copy_path)
     except IOError:

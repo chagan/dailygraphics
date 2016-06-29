@@ -147,19 +147,19 @@
             {% if DEPLOYMENT_TARGET != "production" %}
                 {% if DEPLOYMENT_TARGET != None %}
                 <div class="segment">
-                    <a class="btn localhost" href="http://localhost:8000/graphics/{{ slug }}/">localhost &raquo;</a>
+                    <a class="btn localhost" href="https://localhost:8000/graphics/{{ slug }}/">localhost &raquo;</a>
                 </div>
                 {% endif %}
 
                 {% if DEPLOYMENT_TARGET != 'staging' %}
                 <div class="segment">
-                    <a class="btn staging" href="http://s3.amazonaws.com/wbez-dailygraphics/dailygraphics/graphics/{{ slug }}/" target="_blank">staging &raquo;</a>
+                    <a class="btn staging" href="https://s3.amazonaws.com/wbez-dailygraphics/dailygraphics/graphics/{{ slug }}/" target="_blank">staging &raquo;</a>
                 </div>
                 {% endif %}
 
                 {% if DEPLOYMENT_TARGET != 'production' %}
                 <div class="segment">
-                    <a class="btn production" href="http://s3.amazonaws.com/wbez-dailygraphics/dailygraphics/graphics/{{ slug }}/" target="_blank">production &raquo;</a>
+                    <a class="btn production" href="https://s3.amazonaws.com/wbez-dailygraphics/dailygraphics/graphics/{{ slug }}/index.html" target="_blank">production &raquo;</a>
                 </div>
                 {% endif %}
 
@@ -187,12 +187,12 @@
     <textarea readonly="readonly" rows="10" cols="50">
 <div id="responsive-embed-{{ slug }}">
 </div>
-<script src="http://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/js/lib/pym.js" type="text/javascript"></script>
+<script src="https://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/js/lib/pym.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {
     var pymParent = new pym.Parent(
         'responsive-embed-{{ slug }}',
-        'http://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html',
+        'https://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html',
         {}
     );
 });
@@ -200,11 +200,11 @@ $(function() {
     </textarea>
 <!-- end textarea contents -->
 
-        <h2><span class="production">Production</span> autoinit embed code (<a href="http://blog.apps.npr.org/2014/12/19/pym-core-publisher.html">for member stations</a>)</h2>
+        <h2><span class="production">Production</span> autoinit embed code (<a href="https://blog.apps.npr.org/2014/12/19/pym-core-publisher.html">for member stations</a>)</h2>
 
 <!-- textarea contents -->
     <textarea readonly="readonly" rows="10" cols="50">
-<p data-pym-src="http://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html">&amp;nbsp;</p><script src="http://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/js/lib/pym.js" type="text/javascript"></script>
+<p data-pym-src="https://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html">&amp;nbsp;</p><script src="https://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/js/lib/pym.js" type="text/javascript"></script>
     </textarea>
 <!-- end textarea contents -->
 
