@@ -92,6 +92,7 @@ def get_credentials():
         with open(file_path) as f:
             serialized_credentials = f.read()
     except IOError:
+        print "HIT IOError"
         return None
 
     credentials = authomatic.credentials(serialized_credentials)

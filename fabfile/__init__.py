@@ -86,6 +86,7 @@ def deploy(slug):
     s3_root = '%s/graphics/%s' % (app_config.PROJECT_SLUG, slug)
     graphic_assets = '%s/assets' % graphic_root
     s3_assets = '%s/assets' % s3_root
+    node_modules = '%s/node_modules' % graphic_root
 
     graphic_config = load_graphic_config(graphic_root)
 
@@ -106,7 +107,7 @@ def deploy(slug):
         headers={
             'Cache-Control': 'max-age=%i' % default_max_age
         },
-        ignore=['%s/*' % graphic_assets]
+        ignore=['%s/*' % graphic_assets,'%s/*' % node_modules]
     )
 
     # Deploy parent assets
