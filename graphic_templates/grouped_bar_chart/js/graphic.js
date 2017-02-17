@@ -1,49 +1,28 @@
-// Global config
-var GRAPHIC_DEFAULT_WIDTH = 600;
-var MOBILE_THRESHOLD = 500;
-
 // Global vars
 var pymChild = null;
 var isMobile = false;
-var graphicData = null;
+var skipLabels = [ 'Group', 'key', 'values' ];
 
 /*
  * Initialize the graphic.
  */
 var onWindowLoaded = function() {
     if (Modernizr.svg) {
-        loadLocalData(GRAPHIC_DATA);
-        //loadCSV('data.csv')
-    } else {
-        pymChild = new pym.Child({});
-    }
-}
-
-/*
- * Load graphic data from a local source.
- */
-var loadLocalData = function(data) {
-    graphicData = data;
-
-    formatData();
-
-    pymChild = new pym.Child({
-        renderCallback: render
-    });
-}
-
-/*
- * Load graphic data from a CSV.
- */
-var loadCSV = function(url) {
-    d3.csv(GRAPHIC_DATA_URL, function(error, data) {
-        graphicData = data;
-
         formatData();
 
         pymChild = new pym.Child({
             renderCallback: render
         });
+    } else {
+        pymChild = new pym.Child({});
+    }
+
+    pymChild.onMessage('on-screen', function(bucket) {
+        ANALYTICS.trackEvent('on-screen', bucket);
+    });
+    pymChild.onMessage('scroll-depth', function(data) {
+        data = JSON.parse(data);
+        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
     });
 }
 
@@ -51,12 +30,12 @@ var loadCSV = function(url) {
  * Format graphic data for processing by D3.
  */
 var formatData = function() {
-    graphicData.forEach(function(d) {
+    DATA.forEach(function(d) {
         d['key'] = d['Group'];
         d['values'] = [];
 
         _.each(d, function(v, k) {
-            if (_.contains(['Group', 'key', 'values'], k)) {
+            if (_.contains(skipLabels, k)) {
                 return;
             }
 
@@ -73,7 +52,7 @@ var formatData = function() {
  */
 var render = function(containerWidth) {
     if (!containerWidth) {
-        containerWidth = GRAPHIC_DEFAULT_WIDTH;
+        containerWidth = DEFAULT_WIDTH;
     }
 
     if (containerWidth <= MOBILE_THRESHOLD) {
@@ -84,9 +63,9 @@ var render = function(containerWidth) {
 
     // Render the chart!
     renderGroupedBarChart({
-        container: '#graphic',
+        container: '#grouped-bar-chart',
         width: containerWidth,
-        data: graphicData
+        data: DATA
     });
 
     // Update iframe
@@ -147,22 +126,25 @@ var renderGroupedBarChart = function(config) {
         min = 0;
     }
 
+    var max = d3.max(config['data'], function(d) {
+        return d3.max(d['values'], function(v) {
+            return Math.ceil(v[valueColumn] / roundTicksFactor) * roundTicksFactor;
+        });
+    });
+
     var xScale = d3.scale.linear()
-        .domain([
-            min,
-            d3.max(config['data'], function(d) {
-                return d3.max(d['values'], function(v) {
-                    return Math.ceil(v[valueColumn] / roundTicksFactor) * roundTicksFactor;
-                });
-            })
-        ])
+        .domain([min, max])
         .range([0, chartWidth]);
 
     var yScale = d3.scale.linear()
         .range([chartHeight, 0]);
 
     var colorScale = d3.scale.ordinal()
-    .domain(_.pluck(config['data'][0]['values'], labelColumn))
+        .domain(d3.keys(config['data'][0]['values']).filter(function(d) {
+            if (!_.contains(skipLabels, d)) {
+                return d;
+            }
+        }))
         .range([COLORS['teal3'], COLORS['teal5']]);
     /*
      * Render a color legend.
@@ -278,6 +260,18 @@ var renderGroupedBarChart = function(config) {
             .attr('class', function(d) {
                 return 'y-' + d[labelColumn];
             });
+
+    /*
+     * Render 0-line.
+     */
+    if (min < 0) {
+        chartElement.append('line')
+            .attr('class', 'zero-line')
+            .attr('x1', xScale(0))
+            .attr('x2', xScale(0))
+            .attr('y1', 0)
+            .attr('y2', chartHeight);
+    }
 
     /*
      * Render bar labels.

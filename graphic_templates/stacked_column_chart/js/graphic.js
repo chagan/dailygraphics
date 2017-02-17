@@ -1,49 +1,28 @@
-// Global config
-var GRAPHIC_DEFAULT_WIDTH = 600;
-var MOBILE_THRESHOLD = 500;
-
 // Global vars
 var pymChild = null;
 var isMobile = false;
-var graphicData = null;
+var skipLabels = [ 'label', 'values', 'total' ];
 
 /*
  * Initialize the graphic.
  */
 var onWindowLoaded = function() {
     if (Modernizr.svg) {
-        loadLocalData(GRAPHIC_DATA);
-        //loadCSV('data.csv')
-    } else {
-        pymChild = new pym.Child({});
-    }
-}
-
-/*
- * Load graphic data from a local source.
- */
-var loadLocalData = function(data) {
-    graphicData = data;
-
-    formatData();
-
-    pymChild = new pym.Child({
-        renderCallback: render
-    });
-}
-
-/*
- * Load graphic data from a CSV.
- */
-var loadCSV = function(url) {
-    d3.csv(GRAPHIC_DATA_URL, function(error, data) {
-        graphicData = data;
-
         formatData();
 
         pymChild = new pym.Child({
             renderCallback: render
         });
+    } else {
+        pymChild = new pym.Child({});
+    }
+
+    pymChild.onMessage('on-screen', function(bucket) {
+        ANALYTICS.trackEvent('on-screen', bucket);
+    });
+    pymChild.onMessage('scroll-depth', function(data) {
+        data = JSON.parse(data);
+        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
     });
 }
 
@@ -51,14 +30,14 @@ var loadCSV = function(url) {
  * Format graphic data for processing by D3.
  */
 var formatData = function() {
-    graphicData.forEach(function(d) {
+    DATA.forEach(function(d) {
         var y0 = 0;
 
         d['values'] = [];
         d['total'] = 0;
 
         for (var key in d) {
-            if (key == 'label' || key == 'values' || key == 'total') {
+            if (_.contains(skipLabels, key)) {
                 continue;
             }
 
@@ -84,7 +63,7 @@ var formatData = function() {
  */
 var render = function(containerWidth) {
     if (!containerWidth) {
-        containerWidth = GRAPHIC_DEFAULT_WIDTH;
+        containerWidth = DEFAULT_WIDTH;
     }
 
     if (containerWidth <= MOBILE_THRESHOLD) {
@@ -95,9 +74,9 @@ var render = function(containerWidth) {
 
     // Render the chart!
     renderStackedColumnChart({
-        container: '#graphic',
+        container: '#stacked-column-chart',
         width: containerWidth,
-        data: graphicData
+        data: DATA
     });
 
     // Update iframe
@@ -157,18 +136,19 @@ var renderStackedColumnChart = function(config) {
         min = 0;
     }
 
+    var max = d3.max(config['data'], function(d) {
+        return Math.ceil(d['total'] / roundTicksFactor) * roundTicksFactor;
+    });
+
     var yScale = d3.scale.linear()
-        .domain([
-            min,
-            d3.max(config['data'], function(d) {
-                return Math.ceil(d['total'] / roundTicksFactor) * roundTicksFactor;
-            })
-        ])
+        .domain([min, max])
         .rangeRound([chartHeight, 0]);
 
     var colorScale = d3.scale.ordinal()
         .domain(d3.keys(config['data'][0]).filter(function(d) {
-            return d != labelColumn && d != 'values' && d != 'total';
+            if (!_.contains(skipLabels, d)) {
+                return d;
+            }
         }))
         .range([ COLORS['teal2'], COLORS['teal5'] ]);
 
@@ -283,6 +263,18 @@ var renderStackedColumnChart = function(config) {
             .attr('class', function(d) {
                 return classify(d['name']);
             });
+
+    /*
+     * Render 0 value line.
+     */
+    if (min < 0) {
+        chartElement.append('line')
+            .attr('class', 'zero-line')
+            .attr('x1', 0)
+            .attr('x2', chartWidth)
+            .attr('y1', yScale(0))
+            .attr('y2', yScale(0));
+    }
 
     /*
      * Render values to chart.

@@ -1,49 +1,28 @@
-// Global config
-var GRAPHIC_DEFAULT_WIDTH = 600;
-var MOBILE_THRESHOLD = 500;
-
 // Global vars
 var pymChild = null;
 var isMobile = false;
-var graphicData = null;
+var skipLabels = [ 'label', 'values' ];
 
 /*
  * Initialize the graphic.
  */
 var onWindowLoaded = function() {
     if (Modernizr.svg) {
-        loadLocalData(GRAPHIC_DATA);
-        //loadCSV('data.csv')
-    } else {
-        pymChild = new pym.Child({});
-    }
-}
-
-/*
- * Load graphic data from a local source.
- */
-var loadLocalData = function(data) {
-    graphicData = data;
-
-    formatData();
-
-    pymChild = new pym.Child({
-        renderCallback: render
-    });
-}
-
-/*
- * Load graphic data from a CSV.
- */
-var loadCSV = function(url) {
-    d3.csv(GRAPHIC_DATA_URL, function(error, data) {
-        graphicData = data;
-
         formatData();
 
         pymChild = new pym.Child({
             renderCallback: render
         });
+    } else {
+        pymChild = new pym.Child({});
+    }
+
+    pymChild.onMessage('on-screen', function(bucket) {
+        ANALYTICS.trackEvent('on-screen', bucket);
+    });
+    pymChild.onMessage('scroll-depth', function(data) {
+        data = JSON.parse(data);
+        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
     });
 }
 
@@ -51,13 +30,13 @@ var loadCSV = function(url) {
  * Format graphic data for processing by D3.
  */
 var formatData = function() {
-    graphicData.forEach(function(d) {
+    DATA.forEach(function(d) {
         var x0 = 0;
 
         d['values'] = [];
 
         for (var key in d) {
-            if (key == 'label' || key == 'values') {
+            if (_.contains(skipLabels, key)) {
                 continue;
             }
 
@@ -82,7 +61,7 @@ var formatData = function() {
  */
 var render = function(containerWidth) {
     if (!containerWidth) {
-        containerWidth = GRAPHIC_DEFAULT_WIDTH;
+        containerWidth = DEFAULT_WIDTH;
     }
 
     if (containerWidth <= MOBILE_THRESHOLD) {
@@ -93,9 +72,9 @@ var render = function(containerWidth) {
 
     // Render the chart!
     renderStackedBarChart({
-        container: '#graphic',
+        container: '#stacked-bar-chart',
         width: containerWidth,
-        data: graphicData
+        data: DATA
     });
 
     // Update iframe
@@ -144,32 +123,31 @@ var renderStackedBarChart = function(config) {
     /*
      * Create D3 scale objects.
      */
-     var min = d3.min(config['data'], function(d) {
-         var lastValue = d['values'][d['values'].length - 1];
-
-         return Math.floor(lastValue['x1'] / roundTicksFactor) * roundTicksFactor;
+    var min = d3.min(config['data'], function(d) {
+        var lastValue = d['values'][d['values'].length - 1];
+        return Math.floor(lastValue['x1'] / roundTicksFactor) * roundTicksFactor;
      });
 
-     if (min > 0) {
-         min = 0;
-     }
+    if (min > 0) {
+        min = 0;
+    }
 
-     var xScale = d3.scale.linear()
-         .domain([
-             min,
-             d3.max(config['data'], function(d) {
-                 var lastValue = d['values'][d['values'].length - 1];
+    var max = d3.max(config['data'], function(d) {
+        var lastValue = d['values'][d['values'].length - 1];
+        return Math.ceil(lastValue['x1'] / roundTicksFactor) * roundTicksFactor;
+    });
 
-                 return Math.ceil(lastValue['x1'] / roundTicksFactor) * roundTicksFactor;
-             })
-         ])
-         .rangeRound([0, chartWidth]);
+    var xScale = d3.scale.linear()
+        .domain([min, max])
+        .rangeRound([0, chartWidth]);
 
-     var colorScale = d3.scale.ordinal()
-         .domain(d3.keys(config['data'][0]).filter(function(d) {
-             return d != labelColumn && d != 'values';
-         }))
-         .range([ COLORS['teal3'], COLORS['orange3'], COLORS['blue3'], '#ccc' ]);
+    var colorScale = d3.scale.ordinal()
+        .domain(d3.keys(config['data'][0]).filter(function(d) {
+            if (!_.contains(skipLabels, d)) {
+                return d;
+            }
+        }))
+        .range([ COLORS['teal3'], COLORS['orange3'], COLORS['blue3'], '#ccc' ]);
 
     /*
      * Render the legend.
@@ -313,15 +291,17 @@ var renderStackedBarChart = function(config) {
             })
             .attr('dy', (barHeight / 2) + 4)
 
-     /*
-      * Render 0-line.
-      */
-     chartElement.append('line')
-         .attr('class', 'zero-line')
-         .attr('x1', xScale(0))
-         .attr('x2', xScale(0))
-         .attr('y1', 0)
-         .attr('y2', chartHeight);
+    /*
+     * Render 0-line.
+     */
+    if (min < 0) {
+        chartElement.append('line')
+            .attr('class', 'zero-line')
+            .attr('x1', xScale(0))
+            .attr('x2', xScale(0))
+            .attr('y1', 0)
+            .attr('y2', chartHeight);
+    }
 
     /*
      * Render bar labels.

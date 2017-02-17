@@ -1,6 +1,4 @@
 // Global config
-var GRAPHIC_DEFAULT_WIDTH = 600;
-var MOBILE_THRESHOLD = 500;
 var GEO_DATA_URL = 'data/geodata.json';
 
 var LABEL_DEFAULTS = {
@@ -33,21 +31,37 @@ var geoData = null;
  */
 var onWindowLoaded = function() {
     if (Modernizr.svg) {
-        loadJSON('data/geodata.json')
+        loadJSON()
     } else {
         pymChild = new pym.Child({});
+
+        pymChild.onMessage('on-screen', function(bucket) {
+            ANALYTICS.trackEvent('on-screen', bucket);
+        });
+        pymChild.onMessage('scroll-depth', function(data) {
+            data = JSON.parse(data);
+        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
+        });
     }
 }
 
 /*
  * Load graphic data from a CSV.
  */
-var loadJSON = function(url) {
-    d3.json(url, function(error, data) {
+var loadJSON = function() {
+    d3.json(GEO_DATA_URL, function(error, data) {
         geoData = data;
 
         pymChild = new pym.Child({
             renderCallback: render
+        });
+
+        pymChild.onMessage('on-screen', function(bucket) {
+            ANALYTICS.trackEvent('on-screen', bucket);
+        });
+        pymChild.onMessage('scroll-depth', function(data) {
+            data = JSON.parse(data);
+        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
         });
     });
 }
@@ -57,7 +71,7 @@ var loadJSON = function(url) {
  */
 var render = function(containerWidth) {
     if (!containerWidth) {
-        containerWidth = GRAPHIC_DEFAULT_WIDTH;
+        containerWidth = DEFAULT_WIDTH;
     }
 
     if (containerWidth <= MOBILE_THRESHOLD) {
@@ -68,7 +82,7 @@ var render = function(containerWidth) {
 
     // Render the chart!
     renderLocatorMap({
-        container: '#graphic',
+        container: '#locator-map',
         width: containerWidth,
         data: geoData,
         primaryCountry: 'Nepal'
@@ -117,8 +131,8 @@ var renderLocatorMap = function(config) {
      * Create the map projection.
      */
     var centroid = [((bbox[0] + bbox[2]) / 2), ((bbox[1] + bbox[3]) / 2)];
-    var mapScale = (mapWidth / GRAPHIC_DEFAULT_WIDTH) * defaultScale;
-    var scaleFactor = mapWidth / GRAPHIC_DEFAULT_WIDTH;
+    var mapScale = (mapWidth / DEFAULT_WIDTH) * defaultScale;
+    var scaleFactor = mapWidth / DEFAULT_WIDTH;
 
     projection = d3.geo.mercator()
         .center(centroid)

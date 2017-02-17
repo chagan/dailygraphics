@@ -27,8 +27,27 @@ REPOSITORY_ALT_URL = None # 'git@bitbucket.org:nprapps/%s.git' % REPOSITORY_NAME
 # Path to the folder containing the graphics
 GRAPHICS_PATH = os.path.abspath('../graphics')
 
+# Path to the folder containing the graphics
+ARCHIVE_GRAPHICS_PATH = os.path.abspath('../graphics-archive')
+
 # Path to the graphic templates
 TEMPLATES_PATH = os.path.abspath('graphic_templates')
+
+"""
+PYM
+"""
+
+PYM = {
+    'pym_url': '//pym.nprapps.org/pym.v1.min.js',
+    'pym_loader_url': '//pym.nprapps.org/pym-loader.v1.min.js',
+}
+
+"""
+CAREBOT
+"""
+
+CAREBOT_ENABLED = True
+CAREBOT_URL = '//carebot.nprapps.org/carebot-tracker.v0.min.js'
 
 """
 OAUTH
@@ -107,7 +126,7 @@ def configure_targets(deployment_target):
         DEBUG = True
     else:
         S3_BUCKET = None
-        S3_BASE_URL = 'http://127.0.0.1:8000'
+        S3_BASE_URL = '//127.0.0.1:8000'
         S3_DEPLOY_URL = None
         DEBUG = True
 
