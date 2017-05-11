@@ -41,10 +41,10 @@ def deploy_file(src, dst, headers={}):
 
     file_headers = copy.copy(headers)
 
-    if app_config.S3_BUCKET == app_config.STAGING_S3_BUCKET:
-        policy = 'private'
-    else:
-        policy = 'public-read'
+    # if app_config.S3_BUCKET == app_config.STAGING_S3_BUCKET:
+        # policy = 'private'
+    # else:
+    policy = 'public-read'
 
     if 'Content-Type' not in headers:
         file_headers['Content-Type'] = mimetypes.guess_type(src)[0]
