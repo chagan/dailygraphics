@@ -1,6 +1,17 @@
+0.1.5
+-----
+
+* Animated photo: Remove D3 dependency (#229)
+* Animated photo: Store params in the copy spreadsheet (#228)
+* Switch to new embed loader (#231)
+* Auto-generate dates for new graphics (#237)
+* Make sure viewport test buttons are visible on mobile (#249)
+
 0.1.4
 -----
 
+* Change http and // references to https. (#205)
+* Block histogram: Assign block colors via JS rather than CSS (#175)
 * State grid map: Fix sizing in IE11 (#170)
 * State grid map: Add sequential legend option (#191)
 * State grid map: Define data column as a variable (#176)
@@ -11,7 +22,17 @@
 * Remove references to local copy of pym in a few graphics templates (#188)
 * Ensure support for https (#193)
 * Add AP-style full date formatter (#198)
-* change flat to accomodate to new staging policy
+* Change flat to accomodate to new staging policy
+* Update awscli and Authomatic library requirements
+* Remove unused www deployment (#216)
+* Remove unused files for s3 deployment (#218)
+* Allow render/deploy from an arbitrary folder
+* Remove empty env.settings (#221)
+* Force utf-8 character set on html deployment to S3 (#215)
+* Add testing capabilities
+* Add private assets functionality
+* New diverging bar chart template (#151)
+
 
 0.1.3
 -----

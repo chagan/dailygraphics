@@ -9,13 +9,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta name="robots" content="noindex" />
-
     <base target="_blank">
 
     {% block fonts %}
 
     <!-- Fonts -->
-    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script>
+    WebFont.load({
+        google: {
+            families: ['Source Sans Pro']
+        }
+        timeout: 10000
+    });
+    </script>
+
     {% endblock %}
 
     <!-- Configuration -->

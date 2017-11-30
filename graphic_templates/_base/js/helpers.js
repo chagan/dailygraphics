@@ -121,7 +121,7 @@ var wrapText = function(texts, width, lineHeight) {
                     .attr('x', x)
                     .attr('y', y)
                     .attr('dx', dx + 'px')
-                    .attr('dy', lineNumber * lineHeight)
+                    .attr('dy', (lineNumber * lineHeight) + dy + 'px')
                     .attr('text-anchor', 'begin')
                     .text(word);
             }
@@ -146,7 +146,7 @@ var getLocation = function(href) {
  */
 var isProduction = function(u) {
     var result = true;
-    var u = u || window.location.href;
+    var u = u || window.location.href;
     var re_embedded = /^.*parentUrl=(.*)$/;
     // Check if we are inside the dailygraphics local rig
     var m = u.match(re_embedded)
