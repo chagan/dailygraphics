@@ -1,11 +1,15 @@
 0.1.5
 -----
 
+* Add date to slug of cloned graphic if missing or invalid (#239)
 * Animated photo: Remove D3 dependency (#229)
 * Animated photo: Store params in the copy spreadsheet (#228)
 * Switch to new embed loader (#231)
 * Auto-generate dates for new graphics (#237)
 * Make sure viewport test buttons are visible on mobile (#249)
+* Auto-generates copyedit note using fabric command (#236)
+* Upgrade cssmin version to solve installation issue (#259)
+* Solve issue with draft cloned graphic path (#260)
 
 0.1.4
 -----
@@ -32,7 +36,6 @@
 * Add testing capabilities
 * Add private assets functionality
 * New diverging bar chart template (#151)
-
 
 0.1.3
 -----
