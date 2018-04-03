@@ -124,10 +124,8 @@ def deploy_single(path):
             ignore=['%s/private/*' % graphic_assets]
         )
 
-    # Need to explicitly point to index.html for the AWS staging link
-    file_suffix = ''
-    if env.settings == 'staging':
-        file_suffix = 'index.html'
+    # Need to explicitly point to index.html for AWS link
+    file_suffix = 'index.html'
 
     print ''
     print '%s URL: %s/graphics/%s/%s' % (env.settings.capitalize(), app_config.S3_BASE_URL, slug, file_suffix)
