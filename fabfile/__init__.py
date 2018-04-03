@@ -591,9 +591,7 @@ def copy_spreadsheet(slug):
         utils.replace_in_file(config_path, graphic_config.COPY_GOOGLE_DOC_KEY, '')
 
     print 'Error creating spreadsheet (status code %s) with message %s' % (resp.status, resp.reason)
-<<<<<<< HEAD
-    return False
-=======
+
     return False
 
 @task
@@ -666,4 +664,3 @@ def get_graphic_template_variables(path, graphic_number):
     }
 
     return note
->>>>>>> nprapps/master
