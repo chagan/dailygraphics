@@ -25,10 +25,10 @@ REPOSITORY_URL = 'git@github.com:wbez/%s.git' % REPOSITORY_NAME
 REPOSITORY_ALT_URL = None # 'git@bitbucket.org:nprapps/%s.git' % REPOSITORY_NAME'
 
 # Path to the folder containing the graphics
-GRAPHICS_PATH = os.path.abspath('../graphics')
+GRAPHICS_PATH = os.path.abspath('../graphics-in-process')
 
 # Path to the folder containing the graphics
-ARCHIVE_GRAPHICS_PATH = os.path.abspath('../graphics-archive')
+ARCHIVE_GRAPHICS_PATH = os.path.abspath('../graphics')
 
 # Path to the graphic templates
 TEMPLATES_PATH = os.path.abspath('graphic_templates')
