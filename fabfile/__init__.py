@@ -480,23 +480,11 @@ def add_table(slug):
     _add_graphic(slug, 'table')
 
 @task
-def add_stacked_area_chart(slug):
-    graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
-    local('cp -r graphic_templates/stacked_area_chart %s' % graphic_path)
-    download_copy(slug)
-
-@task
-def add_grouped_bar_chart_horizontal(slug):
-    graphic_path = '%s/%s' % (app_config.GRAPHICS_PATH, slug)
-    local('cp -r graphic_templates/grouped_bar_chart_horizontal %s' % graphic_path)
-    download_copy(slug)
-
-@task
-def add_map_d3(slug):
+def add_quiz(slug):
     """
-    Create a D3 map.
+    Create a quiz.
     """
-    _add_graphic(slug, 'map_d3')
+    _add_graphic(slug, 'quiz')
 
 @task
 def add_issue_matrix(slug):
