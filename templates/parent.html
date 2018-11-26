@@ -260,7 +260,7 @@
 
             <p>Underneath the graphic embed, in the text of the story, add a prompt with a direct link to the graphic (without this preview frame, embed code, etc.). You can copy/paste the text below directly into Seamus (new editor) and the formatting should be preserved.</p>
             <blockquote>
-                <p><em><strong><a href="https://{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html">Don't see the graphic above? Click here.</a></strong></em></p>
+                <p><em><strong><a href="https://s3.amazonaws.com/{{ PRODUCTION_S3_BUCKET['bucket_name'] }}/{{ PROJECT_SLUG }}/graphics/{{ slug }}/child.html">Don't see the graphic above? Click here.</a></strong></em></p>
             </blockquote>
         </div>
 
