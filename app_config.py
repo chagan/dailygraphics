@@ -53,7 +53,7 @@ CAREBOT_URL = 'https://carebot.nprapps.org/carebot-tracker.v0.min.js'
 OAUTH
 """
 
-OAUTH_CREDENTIALS_PATH = '~/.google_oauth_credentials'
+GOOGLE_OAUTH_CREDENTIALS_PATH = '~/.google_oauth_credentials'
 
 authomatic_config = {
     'google': {
