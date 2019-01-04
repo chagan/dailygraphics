@@ -52,10 +52,10 @@ var onAnswerClicked = function() {
 
     // Send guess to analytics
     // Log the number of the question
-    var questionMetric = 'guess-question-' + ($thisQuestion.index() + 1);
+    // var questionMetric = 'guess-question-' + ($thisQuestion.index() + 1);
     // Log whether guess was human or machine
-    var answerValue = $thisAnswer.text();
-    ANALYTICS.trackEvent(questionMetric, answerValue);
+    // var answerValue = $thisAnswer.text();
+    // ANALYTICS.trackEvent(questionMetric, answerValue);
 
     // check if the user selected the correct answer
     var gotItRight = $thisAnswer.parent('li').hasClass('correct');
